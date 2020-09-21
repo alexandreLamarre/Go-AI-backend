@@ -1,21 +1,26 @@
 GAME_CACHE = {}
 
 
-from flask import Flask, request, jsonify
+import flask
 from src.Go import Go
-app = Flask(__name__)
+app = flask.Flask(__name__)
 
-@app.route("/createNewBoard", methods=["POST"])
+@app.route("/input", methods=["POST"])
 def createBoard():
-    content = request.json()
-    # go_board = Go(board)
-    # GAME_CACHE[uuid] = go_board
+    req = flask.request.get_json()
+    go_board = Go(req["board"])
+    GAME_CACHE[req["id"]] = go_board
+    # print(GAME_CACHE[req["id"]])
+    # print(req)
+    return flask.jsonify("true")
 
-@app.route("/playMovePlayer")
-def playNextMove(uuid, player):
-    go_board = GAME_CACHE[uuid]
-
-
+@app.route("/playmoveplayer", methods=["POST"])
+def playNextMove():
+    req = flask.request.get_json()
+    print(req)
+    go_board = GAME_CACHE[req["id"]]
+    board, message = go_board.play_move(req["player"], req["x"], req["y"])
+    return flask.jsonify({"board": board, "message":message})
 
 @app.route("/playMoveAI")
 def playNextMoveAI(uuid, player, AItype):
