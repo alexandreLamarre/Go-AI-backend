@@ -1,7 +1,7 @@
 import copy
-from src.dlgo.gotypes import Player
+from src.dlgo.gotypes import Player, Point
 from src.dlgo import zobrist
-
+from src.dlgo.scoring import final_game_score
 class Move():
     def __init__(self, point=None, is_pass=False, is_resign = False):
         assert (point is not None) ^ is_pass ^ is_resign
@@ -69,8 +69,6 @@ class Board():
         captures.
         """
         assert self.is_on_grid(point)
-        if self._grid.get(point) is not None:
-            print('Illegal play on %s' % str(point))
         assert self._grid.get(point) is None
         # 0. Examine the adjacent points.
         adjacent_same_color = []
@@ -250,3 +248,23 @@ class GameState():
         if move.is_pass or move.is_resign:
             return True
         return self.board.get(move.point) is None
+
+    def legal_moves(self):
+        moves = []
+        for row in range(1, self.board.num_rows+1):
+            for col in range(1, self.board.num_cols+1):
+                move = Move.play(Point(row,col))
+                if self.is_valid_move(move):
+                    moves.append(move)
+        moves.append(Move.pass_turn())
+        moves.append(Move.resign())
+        return moves
+
+    def winner(self):
+        if not self.is_over():
+            return None
+        if self.last_move.is_resign:
+            return self.next_player
+        game_result = final_game_score(self)
+
+        return game_result
