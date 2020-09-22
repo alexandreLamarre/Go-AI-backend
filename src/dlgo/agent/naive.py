@@ -1,8 +1,8 @@
 import random
-from dlgo.agent.base import Agent
-from dlgo.agent.helpers import is_point_an_eye
-from dlgo.goboard_slow import Move
-from dlgo.gotypes import Point
+from src.dlgo.agent.base import Agent
+from src.dlgo.agent.helpers import is_point_an_eye
+from src.dlgo.goboard_slow import Move
+from src.dlgo.gotypes import Point
 
 class RandomBot(Agent):
     def select_move(self, game_state):

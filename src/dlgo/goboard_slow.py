@@ -1,5 +1,5 @@
 import copy
-from dlgo.gotypes import Player
+from src.dlgo.gotypes import Player
 
 class Move():
     def __init__(self, point=None, is_pass=False, is_resign = False):
@@ -158,7 +158,7 @@ class GameState():
     @classmethod
     def new_game(cls, boardsize):
         ''' Creates a new_game board instance'''
-        if isinstance((boardsize, int)):
+        if isinstance(boardsize, int):
             boardsize = (boardsize, boardsize)
         board = Board(*boardsize)
         return GameState(board, Player.black, None, None)

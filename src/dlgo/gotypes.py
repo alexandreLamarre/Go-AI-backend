@@ -1,5 +1,5 @@
 import enum
-from collections import nametuple
+from collections import namedtuple
 
 class Player(enum.Enum):
     black = 1
