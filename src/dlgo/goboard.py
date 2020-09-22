@@ -2,6 +2,8 @@ import copy
 from src.dlgo.gotypes import Player, Point
 from src.dlgo import zobrist
 from src.dlgo.scoring import final_game_score
+
+
 class Move():
     def __init__(self, point=None, is_pass=False, is_resign = False):
         assert (point is not None) ^ is_pass ^ is_resign
@@ -55,6 +57,8 @@ class GoString():
         self.stones == other.stones and \
         self.liberties == other.liberties
 
+    def __deepcopy__(self, memodict={}):
+        return GoString(self.color, self.stones, copy.deepcopy(self.liberties))
 
 class Board():
     def __init__(self, num_rows, num_cols):
@@ -70,7 +74,6 @@ class Board():
         """
         assert self.is_on_grid(point)
         assert self._grid.get(point) is None
-        # 0. Examine the adjacent points.
         adjacent_same_color = []
         adjacent_opposite_color = []
         liberties = []
@@ -86,23 +89,22 @@ class Board():
             else:
                 if neighbor_string not in adjacent_opposite_color:
                     adjacent_opposite_color.append(neighbor_string)
-        new_string = GoString(player, [point], liberties)
-        # tag::apply_zobrist[]
-        new_string = GoString(player, [point], liberties)  # <1>
 
-        for same_color_string in adjacent_same_color:  # <2>
+        new_string = GoString(player, [point], liberties)
+
+        for same_color_string in adjacent_same_color:
             new_string = new_string.merged_with(same_color_string)
         for new_string_point in new_string.stones:
             self._grid[new_string_point] = new_string
 
-        self._hash ^= zobrist.HASH_CODE[point, player]  # <3>
+        self._hash ^= zobrist.HASH_CODE[point, player]
 
         for other_color_string in adjacent_opposite_color:
-            replacement = other_color_string.without_liberty(point)  # <4>
+            replacement = other_color_string.without_liberty(point)
             if replacement.num_liberties:
                 self._replace_string(other_color_string.without_liberty(point))
             else:
-                self._remove_string(other_color_string)  # <5>
+                self._remove_string(other_color_string)
 
 
             # merge adjacent GoStrings of the same color
@@ -170,7 +172,7 @@ class Board():
         copied._hash = self._hash
         return copied
 
-class GameState():
+class GameState:
     def __init__(self, board, next_player, previous, move):
         self.board = board
         self.next_player = next_player
@@ -179,19 +181,17 @@ class GameState():
             self.previous_states = frozenset()
         else:
             self.previous_states = frozenset(
-                previous.previous_states | {(previous.next_player, previous.board.zobrist_hash())})
+                previous.previous_states |
+                {(previous.next_player, previous.board.zobrist_hash())})
         self.last_move = move
 
     def apply_move(self, move):
-        '''
-        Returns the new Game State after applying a move
-        '''
+        """Return the new GameState after applying the move."""
         if move.is_play:
             next_board = copy.deepcopy(self.board)
-            next_board.place_stone(self.next_player.other, move.point)
+            next_board.place_stone(self.next_player, move.point)
         else:
             next_board = self.board
-
         return GameState(next_board, self.next_player.other, self, move)
 
     @classmethod
@@ -268,3 +268,12 @@ class GameState():
         game_result = final_game_score(self)
 
         return game_result
+
+
+
+    # def is_valid_move_player(self, move):
+    #     if self.is_over():
+    #         return False
+    #     if move.is_pass or move.is_resign:
+    #         return True
+    #     return self.board.get(move.point) is None

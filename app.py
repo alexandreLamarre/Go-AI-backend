@@ -39,20 +39,19 @@ def playNextMove():
 
     ##check the move is valid
     valid_move = game.is_valid_move_player(player_move)
-    if valid_move:self_capture = game.is_move_self_capture(player,player_move)
-    else: self_capture = False
-    if not self_capture and valid_move: violate_ko = game.does_move_violate_ko(player, player_move)
-    else: violate_ko = False
+    self_capture = game.is_move_self_capture(player,player_move)
+    violate_ko = game.does_move_violate_ko(player, player_move)
+
     if(valid_move and not self_capture and not violate_ko):
         game = game.apply_move(player_move)
         player_string = "White" if req['player'] == 2 else "Black"
-        if player_move.is_play: output_message += "\n" + player_string +"  ({}, {})".format(player_move.point.row, player_move.point.col)
-        if player_move.is_pass: output_message += "\n "+ player_string + " passed"
-        if player_move.is_resign: output_message += "\n" + player_string+ " resigned"
+        if player_move.is_play: output_message += "\n\n" + player_string +"  ({}, {})".format(player_move.point.row, player_move.point.col)
+        if player_move.is_pass: output_message += "\n\n"+ player_string + " passed"
+        if player_move.is_resign: output_message += "\n\n" + player_string+ " resigned"
     else:
-        if(not valid_move): output_message += "\n Illegal move (not valid)"
-        if(self_capture): output_message += "\n Illegal move (self-capture)"
-        if(violate_ko): output_message += "\n Illegal move (ko)"
+        if(not valid_move): output_message += "\n\n Illegal move (not valid)"
+        if(self_capture): output_message += "\n\n Illegal move (self-capture)"
+        if(violate_ko): output_message += "\n\n Illegal move (ko)"
         completed_play = False
     GAME_CACHE[req['id']] = game
     new_board =board_grid_to_2d(game.board)
@@ -69,9 +68,9 @@ def playNextMoveAI():
     game = GAME_CACHE[req["id"]]
     bot = RandomBot()
     bot_move = bot.select_move(game)
-    if(bot_move.is_pass): output_message += "\n Bot({})".format(player_string) + "Passes"
-    if(bot_move.is_resign): output_message += "\n Bot({})".format(player_string) + "Resigns"
-    if(bot_move.is_play): output_message += "\n Bot({})".format(player_string) + "  ({},{})".format(bot_move.point.row,
+    if(bot_move.is_pass): output_message += "\n\n" + "Bot({})".format(player_string) + "Passes"
+    if(bot_move.is_resign): output_message += "\n\n Bot({})".format(player_string) + "Resigns"
+    if(bot_move.is_play): output_message += "\n\n Bot({})".format(player_string) + "  ({},{})".format(bot_move.point.row,
                                                                                                 bot_move.point.col)
     # print(bot_move)
     # print(bot_move.is_pass)
