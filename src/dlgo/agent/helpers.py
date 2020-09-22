@@ -36,3 +36,4 @@ def is_point_an_eye(board, point, color):
             if off_board_corners > 0:
                 return off_board_corners + friendly_corners == 4
             return friendly_corners >= 3
+

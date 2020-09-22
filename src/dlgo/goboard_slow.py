@@ -37,9 +37,10 @@ class GoString():
     def merged_with(self, go_string):
         assert go_string.color == self.color
         combined_stones = self.stones | go_string.stones
-        return GoString(self.color,
-        combined_stones,
-        (self.liberties | go_string.liberties - combined_stones))
+        return GoString(
+            self.color,
+            combined_stones,
+            (self.liberties | go_string.liberties )- combined_stones)
 
     @property
     def num_liberties(self):
@@ -75,7 +76,7 @@ class Board():
             neighbor_string = self._grid.get(neighbor)
             if neighbor_string is None:
                 liberties.append(neighbor)
-            elif neighbor.string.color == player:
+            elif neighbor_string.color == player:
                 if neighbor_string not in adjacent_same_color:
                     adjacent_same_color.append(neighbor_string)
             else:
@@ -84,17 +85,15 @@ class Board():
             new_string = GoString(player, [point], liberties)
 
             # merge adjacent GoStrings of the same color
-            for same_color_string in adjacent_same_color:
-                new_string = new_string.merged_with(same_color_string)
-            for new_string_point in new_string.stones:
-                self._grid[new_string_point] = new_string
-            # Reduce liberties of any adjacent string of the opposite color
-            for other_color_string in adjacent_opposite_color:
-                other_color_string.remove_liberty(point)
-            # if any opposite strings now have zero liberties, remove them
-            for other_color_string in adjacent_opposite_color:
-                if other_color_string.num_liberties == 0:
-                    self._remove_string(other_color_string)
+        for same_color_string in adjacent_same_color:
+            new_string = new_string.merged_with(same_color_string)
+        for new_string_point in new_string.stones:
+            self._grid[new_string_point] = new_string
+        for other_color_string in adjacent_opposite_color:
+            other_color_string.remove_liberty(point)
+        for other_color_string in adjacent_opposite_color:
+            if other_color_string.num_liberties == 0:
+                self._remove_string(other_color_string)
 
     def is_on_grid(self, point):
         '''
