@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 class Go:
     def __init__(self, board):
         self.board = board
@@ -13,21 +15,9 @@ class Go:
     def get_board(self):
         return self.board
 
-    # def set_move(self, player, move, x, y):
-    #     if(move == "pass" and not(self.previousMove)):
-    #         self.previousMove = true
-    #     elif(move == "pass" and self.previousMove):
-    #         self.gameOver
-    #     else:
-    #         self.play(player,x,y)
-
-    # def play(self, player, x, y):
-    #     self.board[y][x] = player
-    #     self.updateBoard(x,y)
-
     def place_stone(self,player,x,y):
-        new_board = list(list(board_row for board_row in self.board))
-        new_board[y][x] = player
+        new_board = deepcopy(self.board)
+        new_board[x][y] = player
         return new_board
 
     def is_on_board(self,x,y):
@@ -35,20 +25,20 @@ class Go:
 
     def get_valid_neighbors(self,x,y):
         possible_neighbors = ((x+1,y), (x-1,y), (x,y+1), (x, y-1))
-        return [self.board[p[1]][p[0]] for p in possible_neighbors if self.is_on_board(p[0],p[1])]
+        return [(p[0],p[1]) for p in possible_neighbors if self.is_on_board(p[0],p[1])]
 
     def find_reached(self,board,x,y):
-        color = board[y][x]
+        color = board[x][y]
         chain = set((x,y))
         reached = set()
         frontier = [(x,y)]
         while(frontier):
             current_pos = frontier.pop()
             chain.add(current_pos)
-            for node in self.neighbors[current_pos[1]][current_pos[0]]:
-                if board[node[1]][node[0]] == color and not node in chain:
+            for node in self.neighbors[current_pos[0]][current_pos[1]]:
+                if board[node[0]][node[1]] == color and not node in chain:
                     frontier.append((node[0], node[1]))
-                elif board[fn] != color:
+                elif board[node[1]][node[0]] != color:
                     reached.add((node[0], node[1]))
 
         return chain, reached
@@ -56,12 +46,12 @@ class Go:
     def check_captures(self,board, x,y):
         chain, reached = self.find_reached(board,x,y)
         non_empty = 0
-        for i in range(len(reached)):
-            if(board[reached[1]][reached[0]]):
+        for el in reached:
+            if(board[el[0]][el[1]]):
                 non_empty += 1
         if non_empty == len(reached):
             for i in range(len(chain)):
-                board[chain[1]][chain[0]] = 0
+                board[chain[0]][chain[1]] = 0
             return board, chain
         else:
             return board, {}
@@ -74,38 +64,19 @@ class Go:
 
     def play_move(self,player,x,y):
         output = ""
-        if(self.board[y][x]):
-            output += "Illegal move"
-            return self.board, output
-
+        if(self.board[x][y]):
+            output += "\n Illegal move"
+            played = False
+            return self.board, output, played
         board = self.place_stone(player,x,y)
+        played = True
         opponent = self.swap_players(player)
+        color = ""
+        if(player == 1): color = "White"
+        if(player == 2): color = "Black"
+        output += "\n" + color + " moved to" + "({}, {})".format(x,y)
 
-        player_stones = []
-        opponent_stones = []
 
-        for node in self.neighbors[y][x]:
-            if(board[y][x] == player):
-                player_stones.append((x,y))
-            if(board[y][x] == opponent):
-                opponent_stones.append((x,y))
-        chain = {}
-        for s in opponent_stones:
-            board, chain = self.check_captures(board, s[0],s[1])
-            output += str(chain)
-        if output:
-            color = ""
-            if(player == 1): color = "White"
-            if(player == 2): color = "Black"
-            output = color + " captured :" + output
-        output2 = ""
-        for s in player_stones:
-            board,chain = self.check_captures(board, s[0],s[1])
-            output2 += str(chain)
-        if output2:
-            if(player == 1): color = "White"
-            if(player == 2): color = "Black"
-            output2 = color + " captured : " + output2
 
         self.board = board
-        return board, output+output2
+        return board, output, played #+output2
