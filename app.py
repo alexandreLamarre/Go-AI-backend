@@ -1,5 +1,6 @@
 from src.dlgo import agent
 from src.dlgo import goboard_slow
+from src.dlgo import goboard
 from src.dlgo import gotypes
 from src.dlgo.agent.naive import RandomBot
 
@@ -16,7 +17,7 @@ app = flask.Flask(__name__)
 def createBoard():
     req = flask.request.get_json()
     print("Server request: {}".format(req))
-    game = goboard_slow.GameState.new_game(req['boardsize'])
+    game = goboard.GameState.new_game(req['boardsize'])
     GAME_CACHE[req['id']] = game
     print("Cached game: {}".format(GAME_CACHE))
     return flask.jsonify("true")
@@ -27,16 +28,17 @@ def playNextMove():
     # print("Server request: {}".format(req))
     # fetch the game
     output_message = ""
+    completed_play = True
     game = GAME_CACHE[req["id"]]
     ## define the player
     if(req['player'] == 1): player = gotypes.Player.black
     else: player = gotypes.Player.white
     ## fetch the move
     point_to_play = gotypes.Point(row = req['x']+1, col = req['y']+1)
-    player_move = goboard_slow.Move.play(point_to_play)
+    player_move = goboard.Move.play(point_to_play)
 
     ##check the move is valid
-    valid_move = game.is_valid_move(player_move)
+    valid_move = game.is_valid_move_player(player_move)
     if valid_move:self_capture = game.is_move_self_capture(player,player_move)
     else: self_capture = False
     if not self_capture and valid_move: violate_ko = game.does_move_violate_ko(player, player_move)
@@ -48,12 +50,15 @@ def playNextMove():
         if player_move.is_pass: output_message += "\n "+ player_string + " passed"
         if player_move.is_resign: output_message += "\n" + player_string+ " resigned"
     else:
-        output_message += "\n Illegal move"
+        if(not valid_move): output_message += "\n Illegal move (not valid)"
+        if(self_capture): output_message += "\n Illegal move (self-capture)"
+        if(violate_ko): output_message += "\n Illegal move (ko)"
+        completed_play = False
     GAME_CACHE[req['id']] = game
     new_board =board_grid_to_2d(game.board)
     # print(new_board)
     # print(output_message)
-    return flask.jsonify({"board": new_board, "message": output_message})
+    return flask.jsonify({"board": new_board, "message": output_message, "valid": completed_play})
 
 @app.route("/playmoveai", methods=["POST"])
 def playNextMoveAI():

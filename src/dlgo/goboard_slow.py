@@ -69,8 +69,7 @@ class Board():
         adjacent_same_color = []
         adjacent_opposite_color = []
         liberties = []
-
-        for neighbor in point.neighbors():
+        for neighbor in point.neighbors():  # <1>
             if not self.is_on_grid(neighbor):
                 continue
             neighbor_string = self._grid.get(neighbor)
@@ -82,7 +81,7 @@ class Board():
             else:
                 if neighbor_string not in adjacent_opposite_color:
                     adjacent_opposite_color.append(neighbor_string)
-            new_string = GoString(player, [point], liberties)
+        new_string = GoString(player, [point], liberties)
 
             # merge adjacent GoStrings of the same color
         for same_color_string in adjacent_same_color:
@@ -206,3 +205,10 @@ class GameState():
             self.board.get(move.point) is None and
             not self.is_move_self_capture(self.next_player, move) and
             not self.does_move_violate_ko(self.next_player, move))
+
+    def is_valid_move_player(self, move):
+        if self.is_over():
+            return False
+        if move.is_pass or move.is_resign:
+            return True
+        return self.board.get(move.point) is None
