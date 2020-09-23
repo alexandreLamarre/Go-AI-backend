@@ -22,8 +22,8 @@ def createBoard():
     print("Cached game: {}".format(GAME_CACHE))
     return flask.jsonify("true")
 
-@app.route("/playmoveplayer", methods=["POST"])
-def playNextMove():
+@app.route("/playmoveplayer/<move_type>", methods=["POST"])
+def playNextMove(move_type):
     req = flask.request.get_json()
     # print("Server request: {}".format(req))
     # fetch the game
@@ -35,8 +35,12 @@ def playNextMove():
     if(req['player'] == 1): player = gotypes.Player.black
     else: player = gotypes.Player.white
     ## fetch the move
-    point_to_play = gotypes.Point(row = req['x']+1, col = req['y']+1)
-    player_move = goboard.Move.play(point_to_play)
+    if(move_type == "point"):
+        point_to_play = gotypes.Point(row = req['x']+1, col = req['y']+1)
+        player_move = goboard.Move.play(point_to_play)
+    elif(move_type == "pass"):player_move = goboard.Move.pass_turn()
+    else: player_move = goboard.Move.resign()
+    
 
     ##check the move is valid
     valid_move = game.is_valid_move_player(player_move)
