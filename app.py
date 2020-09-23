@@ -3,8 +3,8 @@ from src.dlgo import goboard_slow
 from src.dlgo import goboard
 from src.dlgo import gotypes
 from src.dlgo.agent.naive import RandomBot
-
-
+from src.dlgo.agent.alphabeta import AlphaBeta
+from src.dlgo.agent import heuristics
 
 GAME_CACHE = {}
 
@@ -59,7 +59,10 @@ def playNextMove():
     if game.is_over(): game_over = True
     # print(new_board)
     # print(output_message)
-    return flask.jsonify({"board": new_board, "message": output_message, "valid": completed_play, "over": game_over})
+    winner = game.winner()
+    if winner == gotypes.Player.black: winner = "\n\n Black wins"
+    if winner == gotypes.Player.white: winner = "\n\n White wins"
+    return flask.jsonify({"board": new_board, "message": output_message, "valid": completed_play, "over": game_over, "winner": winner})
 
 @app.route("/playmoveai", methods=["POST"])
 def playNextMoveAI():
@@ -69,22 +72,26 @@ def playNextMoveAI():
     output_message = ""
     game_over = False
     game = GAME_CACHE[req["id"]]
-    bot = RandomBot()
-    bot_move = bot.select_move(game)
-    if(bot_move.is_pass): output_message += "\n\n" + "Bot({})".format(player_string) + "Passes"
-    if(bot_move.is_resign): output_message += "\n\n Bot({})".format(player_string) + "Resigns"
-    if(bot_move.is_play): output_message += "\n\n Bot({})".format(player_string) + "  ({},{})".format(bot_move.point.row,
-                                                                                                bot_move.point.col)
-    # print(bot_move)
-    # print(bot_move.is_pass)
-    # print(bot_move.is_resign)
-    # print(bot_move.is_play)
-    game = game.apply_move(bot_move)
-    new_board = board_grid_to_2d(game.board)
-    GAME_CACHE[req['id']] = game
+    if not game.is_over():
+        bot = AlphaBeta(3, heuristics.capture_diff)
+        bot_move = bot.select_move(game)
+        if(bot_move.is_pass): output_message += "\n\n" + "Bot({})".format(player_string) + "Passes"
+        if(bot_move.is_resign): output_message += "\n\n Bot({})".format(player_string) + "Resigns"
+        if(bot_move.is_play): output_message += "\n\n Bot({})".format(player_string) + "  ({},{})".format(bot_move.point.row,
+                                                                                                    bot_move.point.col)
+
+        game = game.apply_move(bot_move)
+        new_board = board_grid_to_2d(game.board)
+        GAME_CACHE[req['id']] = game
     # print(new_board)
-    if game.is_over():game_over = True
-    return flask.jsonify({"board": new_board, "message": output_message, "over": game_over })
+    else:
+        game_over = True
+        new_board = board_grid_to_2d(game.board)
+    print("Game over: {}".format(game_over))
+    winner = game.winner()
+    if winner == gotypes.Player.black: winner = "\n\n Black wins"
+    if winner == gotypes.Player.white: winner = "\n\n White wins"
+    return flask.jsonify({"board": new_board, "message": output_message, "over": game_over, "winner": winner})
 
 def board_grid_to_2d(board):
     new_board = []

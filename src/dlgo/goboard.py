@@ -3,7 +3,6 @@ from src.dlgo.gotypes import Player, Point
 from src.dlgo import zobrist
 from src.dlgo.scoring import final_game_score
 
-
 class Move():
     def __init__(self, point=None, is_pass=False, is_resign = False):
         assert (point is not None) ^ is_pass ^ is_resign
@@ -256,6 +255,7 @@ class GameState:
                 move = Move.play(Point(row,col))
                 if self.is_valid_move(move):
                     moves.append(move)
+
         moves.append(Move.pass_turn())
         moves.append(Move.resign())
         return moves
@@ -267,7 +267,7 @@ class GameState:
             return self.next_player
         game_result = final_game_score(self)
 
-        return game_result
+        return game_result.winner
 
 
 
