@@ -30,6 +30,7 @@ def playNextMove():
     output_message = ""
     completed_play = True
     game = GAME_CACHE[req["id"]]
+    game_over = False
     ## define the player
     if(req['player'] == 1): player = gotypes.Player.black
     else: player = gotypes.Player.white
@@ -55,9 +56,10 @@ def playNextMove():
         completed_play = False
     GAME_CACHE[req['id']] = game
     new_board =board_grid_to_2d(game.board)
+    if game.is_over(): game_over = True
     # print(new_board)
     # print(output_message)
-    return flask.jsonify({"board": new_board, "message": output_message, "valid": completed_play})
+    return flask.jsonify({"board": new_board, "message": output_message, "valid": completed_play, "over": game_over})
 
 @app.route("/playmoveai", methods=["POST"])
 def playNextMoveAI():
@@ -65,6 +67,7 @@ def playNextMoveAI():
     # print("Server request : {}".format(req))
     player_string = "White" if req['player'] == 2 else "Black"
     output_message = ""
+    game_over = False
     game = GAME_CACHE[req["id"]]
     bot = RandomBot()
     bot_move = bot.select_move(game)
@@ -80,7 +83,8 @@ def playNextMoveAI():
     new_board = board_grid_to_2d(game.board)
     GAME_CACHE[req['id']] = game
     # print(new_board)
-    return flask.jsonify({"board": new_board, "message": output_message })
+    if game.is_over():game_over = True
+    return flask.jsonify({"board": new_board, "message": output_message, "over": game_over })
 
 def board_grid_to_2d(board):
     new_board = []
