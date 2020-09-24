@@ -5,6 +5,7 @@ from src.dlgo import gotypes
 from src.dlgo.agent.naive import RandomBot
 from src.dlgo.agent.alphabeta import AlphaBeta
 from src.dlgo.agent import heuristics
+from src.dlgo.agent.MCTSagent import MCTSAgent
 
 GAME_CACHE = {}
 
@@ -40,7 +41,7 @@ def playNextMove(move_type):
         player_move = goboard.Move.play(point_to_play)
     elif(move_type == "pass"):player_move = goboard.Move.pass_turn()
     else: player_move = goboard.Move.resign()
-    
+
 
     ##check the move is valid
     valid_move = game.is_valid_move_player(player_move)
@@ -77,7 +78,7 @@ def playNextMoveAI():
     game_over = False
     game = GAME_CACHE[req["id"]]
     if not game.is_over():
-        bot = AlphaBeta(3, heuristics.capture_diff)
+        bot = MCTSAgent(10)
         bot_move = bot.select_move(game)
         if(bot_move.is_pass): output_message += "\n\n" + "Bot({})".format(player_string) + "Passes"
         if(bot_move.is_resign): output_message += "\n\n Bot({})".format(player_string) + "Resigns"
@@ -91,6 +92,7 @@ def playNextMoveAI():
     else:
         game_over = True
         new_board = board_grid_to_2d(game.board)
+    if game.is_over(): game_over = True
     print("Game over: {}".format(game_over))
     winner = game.winner()
     if winner == gotypes.Player.black: winner = "\n\n Black wins"
