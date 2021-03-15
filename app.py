@@ -2,6 +2,7 @@ from src.dlgo import agent
 from src.dlgo import goboard_slow
 from src.dlgo import goboard
 from src.dlgo import gotypes
+from src.dlgo import goboard_fast
 from src.dlgo.agent.naive import RandomBot
 from src.dlgo.agent.alphabeta import AlphaBeta
 from src.dlgo.agent import heuristics
@@ -9,10 +10,13 @@ from src.dlgo.agent.MCTSagent import MCTSAgent
 
 GAME_CACHE = {}
 
-
 import flask
-from src.Go import Go
+from flask_socketio import SocketIO
+
 app = flask.Flask(__name__)
+#TODO: set up kubernetes cluster the pass in id to cors
+corsAllowed = "*"
+socketio = SocketIO(app, cors_allowed_origins = corsAllowed)
 
 @app.route("/input", methods=["POST"])
 def createBoard():
@@ -38,9 +42,9 @@ def playNextMove(move_type):
     ## fetch the move
     if(move_type == "point"):
         point_to_play = gotypes.Point(row = req['x']+1, col = req['y']+1)
-        player_move = goboard.Move.play(point_to_play)
-    elif(move_type == "pass"):player_move = goboard.Move.pass_turn()
-    else: player_move = goboard.Move.resign()
+        player_move = goboard_fast.Move.play(point_to_play)
+    elif(move_type == "pass"):player_move = goboard_fast.Move.pass_turn()
+    else: player_move = goboard_fast.Move.resign()
 
 
     ##check the move is valid
@@ -78,7 +82,9 @@ def playNextMoveAI():
     game_over = False
     game = GAME_CACHE[req["id"]]
     if not game.is_over():
-        bot = MCTSAgent(10)
+        num_simulations = 500
+        print(num_simulations)
+        bot = MCTSAgent(num_simulations)
         bot_move = bot.select_move(game)
         if(bot_move.is_pass): output_message += "\n\n" + "Bot({})".format(player_string) + "Passes"
         if(bot_move.is_resign): output_message += "\n\n Bot({})".format(player_string) + "Resigns"
@@ -117,5 +123,9 @@ def stone_to_num(stone):
     if stone == gotypes.Player.black: return 1
     return stone
 
+@socketio.on("connection")
+def handleConnection():
+    print("Incoming connection...")
+
 if __name__ == "__main__":
-    app.run()
+    socketio.run(app)
