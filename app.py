@@ -11,10 +11,11 @@ from src.dlgo.agent.MCTSagent import MCTSAgent
 GAME_CACHE = {}
 
 import flask
-from flask_socketio import SocketIO
+from flask_socketio import SocketIO, emit
 
 app = flask.Flask(__name__)
-#TODO: set up kubernetes cluster the pass in id to cors
+#TODO: set up kubernetes cluster then pass in id to cors
+
 corsAllowed = "*"
 socketio = SocketIO(app, cors_allowed_origins = corsAllowed)
 
@@ -123,9 +124,20 @@ def stone_to_num(stone):
     if stone == gotypes.Player.black: return 1
     return stone
 
-@socketio.on("connection")
+@socketio.on("connect")
 def handleConnection():
     print("Incoming connection...")
+
+
+
+@socketio.on("connected")
+def handleConnected(data):
+    print("incoming connected json", data)
+    message = "\n" + data["data"]["username"] + " connected to game " + data["data"]["gameId"]
+    sendData = {}
+    sendData["data"] = message
+    sendData["gameId"] = data["data"]["gameId"]
+    emit("Message", sendData)
 
 if __name__ == "__main__":
     socketio.run(app)
