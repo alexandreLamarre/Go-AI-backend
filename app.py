@@ -7,6 +7,7 @@ from src.dlgo.agent.naive import RandomBot
 from src.dlgo.agent.alphabeta import AlphaBeta
 from src.dlgo.agent import heuristics
 from src.dlgo.agent.MCTSagent import MCTSAgent
+from Game import Game
 
 GAME_CACHE = {}
 
@@ -133,11 +134,35 @@ def handleConnection():
 @socketio.on("connected")
 def handleConnected(data):
     print("incoming connected json", data)
-    message = "\n" + data["data"]["username"] + " connected to game " + data["data"]["gameId"]
-    sendData = {}
+    username = data["data"]["username"]
+    boardSize = int(data["data"]["boardSize"])
+    gameId = data["data"]["gameId"]
+    message = "\n" + username + " connected to game " + gameId
+
+    player = None
+    if not gameId in GAME_CACHE.keys():
+        GAME_CACHE[gameId] = Game(boardSize)
+        player = GAME_CACHE[gameId].assignPlayer(username)
+    else:
+        player = GAME_CACHE[gameId].assignPlayer(username)
+    # Data sent back to client:
+    sendData = dict()
     sendData["data"] = message
-    sendData["gameId"] = data["data"]["gameId"]
-    emit("Message", sendData)
+    sendData["gameId"] = gameId
+    sendData["player"] = player
+    emit("Message", sendData, broadcast=True)
+
+
+@socketio.on("broadcastMessage")
+def handleBroadcast(data):
+    username = data["data"]["user"]
+    msg = data["data"]["message"]
+    gameId = data["data"]["gameId"]
+    sendData = dict()
+    sendData["data"] = msg
+    sendData["gameId"] = gameId
+    sendData["user"] = username
+    emit("Message", sendData, broadcast=True)
 
 if __name__ == "__main__":
     socketio.run(app)
