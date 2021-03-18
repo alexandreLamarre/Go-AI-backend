@@ -5,6 +5,7 @@ class Game:
         self.gameState = goboard.GameState.new_game(boardSize)
         self.black = None
         self.white = None
+        self.started = False
 
     # returns 1 if the player is assigned black
     # returns 2 if the player is assigned white
@@ -26,3 +27,16 @@ class Game:
             self.white = name
             return 2
         return None
+
+    def isPlayer(self, name):
+        if self.black == name:
+            return 1
+        if self.white == name:
+            return 2
+
+    def otherPlayer(self, name):
+        if self.black == name:
+            return 2
+        if self.white == name:
+            return 1
+

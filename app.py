@@ -130,14 +130,14 @@ def handleConnection():
     print("Incoming connection...")
 
 
-
+## handles player versus player connections
 @socketio.on("connected")
 def handleConnected(data):
     print("incoming connected json", data)
     username = data["data"]["username"]
     boardSize = int(data["data"]["boardSize"])
     gameId = data["data"]["gameId"]
-    message = "\n" + username + " connected to game " + gameId
+    message = "\n" + username + " connected."
 
     player = None
     if not gameId in GAME_CACHE.keys():
@@ -145,12 +145,39 @@ def handleConnected(data):
         player = GAME_CACHE[gameId].assignPlayer(username)
     else:
         player = GAME_CACHE[gameId].assignPlayer(username)
+        if player is not None:
+            startData = dict()
+            startData["players"] = [GAME_CACHE[gameId].black, GAME_CACHE[gameId].white]
+            emit("gameStart", startData, broadcast= True)
     # Data sent back to client:
     sendData = dict()
     sendData["data"] = message
     sendData["gameId"] = gameId
-    sendData["player"] = player
+    emit("successfulConnection")
     emit("Message", sendData, broadcast=True)
+
+## handles player versus player disconnections/leaves
+@socketio.on("disconnected")
+def handleDisconnected(data):
+    print("incoming disconnected json", data)
+    username = data["data"]["username"]
+    gameId = data["data"]["gameId"]
+    message = "\n" + username + " left."
+
+    sendData = dict()
+    sendData["gameId"] = gameId
+    sendData["data"] = message
+    emit("Message", sendData, broadcast= True)
+    if GAME_CACHE[gameId].isPlayer(username) is not None and GAME_CACHE[gameId].started:
+        if not GAME_CACHE[gameId].gameState.isOver():
+            winner = GAME_CACHE[gameId].otherPlayer(username)
+        else:
+            winner = GAME_CACHE[gameId].gameState.winner()
+            sendData["winner"] = winner
+        emit("handleWin", sendData, broadcast= True)
+    elif GAME_CACHE[gameId].isPlayer(username):
+        GAME_CACHE.pop(gameId)
+
 
 
 @socketio.on("broadcastMessage")
